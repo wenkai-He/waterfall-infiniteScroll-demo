@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0
+        }
+
+        .box {
+            margin: 0 auto;
+            position: relative;
+        }
+
+        img {
+            margin-top: 10px;
+            padding: 10px;
+
+        }
+
+        .w {
+            float: left;
+            border: 1px solid red;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="box"></div>
+    <script>
+        var box = document.querySelector('.box');
+        //要保证一页最多四个 所以设置块的高度为页面高度的1/3到1/2
+        const minItem=Math.floor(window.innerHeight/3);
+        const maxItem=Math.floor(window.innerHeight/2);
+        //width均分屏幕
+        const width=window.innerWidth/2-30
+        //采用七原色
+        var colorArr=['FF0000','FF7F00','FFF000','00FF00','00FFFFF','0000FF','8B00FF']
+        //动态添加图片
+        function addImg() {
+            for (var i = 0; i < 6; i++) {//每次生成6块，防止4块时高度不够 无法触发无限滚动
+                var imgDiv = document.createElement('div');
+                imgDiv.className = 'w';
+                var img = document.createElement('img');
+                var random=Math.floor(Math.random()*(maxItem-minItem)+minItem);
+                var color=colorArr[Math.floor(Math.random()*7)];
+                img.src = `https://via.placeholder.com/${width}x${random}/${color}`;
+                imgDiv.appendChild(img);
+                box.appendChild(imgDiv);
+            }
+        }
+        function buildWaterFall() {
+            //视口的宽度
+            var viewWidth = document.documentElement.clientWidth;
+            //统计所有的块
+            var divs = document.querySelectorAll('.w');
+            var oneWidth = divs[0].offsetWidth;
+            //视口的宽度/一个img宽度=count
+            var count = Math.floor(viewWidth / oneWidth);
+            //count*一个img的宽度
+            box.style.width = count * oneWidth + 'px';
+            //存住每一块的高度
+            var heightArr = [];
+            for (var i = 0; i < divs.length; i++) {
+                //每一行有两个 添加进数组后 计算出高度最小的位置 将下一行的块塞进去
+                if (i < count) {
+                    heightArr.push(divs[i].offsetHeight);
+                } else {
+                    //新块相对他正上方的块是绝对定位的
+                    divs[i].style.position = 'absolute';
+                    //计算这一行的最小高度
+                    var minValue = Math.min.apply(null, heightArr);
+                    //获取上一行的高度最小下标
+                    var minIndex = heightArr.indexOf(minValue);
+                    //x是继承上一行的offsetleft
+                    var x = divs[minIndex].offsetLeft;
+                    //定位确定位置
+                    divs[i].style.left = x + 'px';
+                    divs[i].style.top = minValue + 'px';
+                    //一次添加6块 所以需要更新数组直到添加完6块为止
+                    heightArr[minIndex] = heightArr[minIndex] + divs[i].offsetHeight;
+                }
+            }
+        }
+        //初始调用一次
+        addImg();
+        window.onload = function () {
+            buildWaterFall();
+        }
+        //判断是否要添加新块 无限滚动
+        function scrollBool() {
+            //当前视口高度加上滚动距离要大于最后一张图片距离父元素的高度
+            var viewHeight = document.documentElement.clientHeight;
+            //滚动高度
+            var scrollTop = document.body.scrollTop || document.documentElement.scrollTop;
+            //获取最后一个元素距离他上个元素顶端的距离
+            var divs = document.querySelectorAll(".w");
+            var lastHeight = divs[divs.length - 1].offsetTop;
+            //实际高度+滚动高度如果大于最后一个元素距离他上个元素顶端的距离 就需要添加新块
+            if (viewHeight + scrollTop > lastHeight) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        window.onscroll = function () {
+            if (scrollBool()) {
+                addImg();
+                buildWaterFall();
+            }
+        }
+    </script>
+</body>
+
+</html>
